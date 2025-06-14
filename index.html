@@ -26,7 +26,7 @@ layout: ../layouts/BaseLayout.astro
         const { data: singolo, error } = await supabase
           .from('ospiti')
           .select('*')
-          .ilike('nome', nomeInput);
+          .ilike('nome', `%${nomeInput}%`);
 
         if (error || !singolo || singolo.length === 0) {
           risultato.innerHTML = "<p class='text-red-600'>Nome non trovato 😢</p>";
