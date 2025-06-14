@@ -37,7 +37,7 @@ layout: ../layouts/BaseLayout.astro
         const { data: famiglia } = await supabase
           .from('ospiti')
           .select('*')
-          .eq('famiglia_id', famigliaId);
+          .eq('fam_id', famigliaId);
 
         risultato.innerHTML = `
           <div class='bg-green-50 p-4 rounded shadow'>
