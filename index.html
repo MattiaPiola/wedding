@@ -1,0 +1,159 @@
+---
+title: "RSVP - Mattia & Giulia"
+layout: ../layouts/BaseLayout.astro
+---
+
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RSVP - Mattia & Giulia</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script type="module">
+      import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+      const supabase = createClient(
+        'https://ehhsyufimkfbvkipjqbt.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoaHN5dWZpbWtmYnZraXBqcWJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5MTgzNTksImV4cCI6MjA2NTQ5NDM1OX0.4mlFhtkzOdXj4Gl5RmMc5BYikUxxUDCpseahQoYZ0-I'
+      );
+
+      window.cercaInvitato = async function(event) {
+        event.preventDefault();
+        const nomeInput = document.getElementById("nome").value.trim();
+        const risultato = document.getElementById("risultato");
+        risultato.innerHTML = "<p class='text-gray-600'>Ricerca in corso...</p>";
+
+        const { data: singolo, error } = await supabase
+          .from('ospiti')
+          .select('*')
+          .ilike('nome', nomeInput);
+
+        if (error || !singolo || singolo.length === 0) {
+          risultato.innerHTML = "<p class='text-red-600'>Nome non trovato 😢</p>";
+          return;
+        }
+
+        const famigliaId = singolo[0].fam_id;
+        const { data: famiglia } = await supabase
+          .from('ospiti')
+          .select('*')
+          .eq('famiglia_id', famigliaId);
+
+        risultato.innerHTML = `
+          <div class='bg-green-50 p-4 rounded shadow'>
+            <p class='font-semibold mb-2'>Abbiamo trovato la tua famiglia! Puoi confermare la presenza per ognuno di loro:</p>
+            <form id="conferma-form" class="space-y-4">
+              ${famiglia.map(membro => `
+                <div class='border p-3 rounded'>
+                  <p class='font-medium'>${membro.nome}</p>
+                  <label class='block mt-2'>Partecipa?
+                    <select name="presente-${membro.id}" class='w-full border rounded p-2'>
+                      <option value="">Non so</option>
+                      <option value="true">Sì</option>
+                      <option value="false">No</option>
+                    </select>
+                  </label>
+                </div>
+              `).join('')}
+              <button type="submit" class="mt-4 bg-[var(--colore-primario)] hover:bg-[var(--colore-primario-scuro)] text-white px-4 py-2 rounded">Invia Conferme</button>
+            </form>
+          </div>`;
+
+        document.getElementById("conferma-form").addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const updates = await Promise.all(
+            famiglia.map(async membro => {
+              const valore = e.target[`presente-${membro.id}`].value;
+              if (valore === "true" || valore === "false") {
+                return await supabase
+                  .from('ospiti')
+                  .update({ presente: valore === "true" })
+                  .eq('id', membro.id);
+              }
+            })
+          );
+          risultato.innerHTML += `<p class='mt-4 text-green-700'>Grazie per aver confermato la vostra presenza! 💌</p>`;
+        });
+      }
+    </script>
+    <style>
+      :root {
+        --colore-primario: #ec4899;
+        --colore-primario-scuro: #db2777;
+        --colore-secondario: #fce7f3;
+      }
+    </style>
+  </head>
+  <body class="bg-white text-gray-800 font-sans scroll-smooth">
+    <!-- Navbar -->
+    <header class="bg-white shadow fixed top-0 left-0 right-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex flex-1">
+          <nav class="flex space-x-4">
+            <a href="#programma" class="text-sm font-medium text-gray-700 hover:text-[var(--colore-primario)]">Programma</a>
+            <a href="#location" class="text-sm font-medium text-gray-700 hover:text-[var(--colore-primario)]">Come arrivare</a>
+            <a href="#galleria" class="text-sm font-medium text-gray-700 hover:text-[var(--colore-primario)]">Galleria</a>
+          </nav>
+        </div>
+        <div class="flex-none">
+          <a href="#" class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 text-2xl">💍</a>
+        </div>
+        <div class="flex flex-1 justify-end">
+          <a href="#rsvp" class="bg-[var(--colore-primario)] text-white px-4 py-2 rounded hover:bg-[var(--colore-primario-scuro)] text-sm font-medium">RSVP</a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="pt-32 pb-20 bg-[var(--colore-secondario)] text-center">
+      <h1 class="text-5xl font-bold mb-4">Mattia & Giulia</h1>
+      <p class="text-xl">Ci sposiamo! 14 settembre 2025 - Bergamo</p>
+    </section>
+
+    <!-- Programma -->
+    <section id="programma" class="py-12 px-6 max-w-4xl mx-auto">
+      <h2 class="text-3xl font-semibold mb-6 text-center">Programma</h2>
+      <ul class="space-y-4 text-lg">
+        <li><strong>15:00</strong> - Cerimonia presso Villa Leoni</li>
+        <li><strong>16:30</strong> - Aperitivo nel giardino</li>
+        <li><strong>18:00</strong> - Cena e festeggiamenti</li>
+        <li><strong>21:00</strong> - Taglio torta & party!</li>
+      </ul>
+    </section>
+
+    <!-- Mappa -->
+    <section id="location" class="py-12 px-6 max-w-4xl mx-auto">
+      <h2 class="text-3xl font-semibold mb-6 text-center">Come arrivare</h2>
+      <div class="w-full h-64">
+        <iframe class="w-full h-full border-0 rounded" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2793.123456!2d9.673454!3d45.694132!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3AVillaLeoni!5e0!3m2!1sit!2sit!4v1717680000000" allowfullscreen="" loading="lazy"></iframe>
+      </div>
+    </section>
+
+    <!-- Galleria -->
+    <section id="galleria" class="py-12 px-6 max-w-4xl mx-auto text-center">
+      <h2 class="text-3xl font-semibold mb-6">Galleria</h2>
+      <p>Prossimamente alcune foto ♥</p>
+    </section>
+
+    <!-- RSVP -->
+    <section id="rsvp" class="py-12 px-6 max-w-xl mx-auto">
+      <h2 class="text-3xl font-semibold mb-6 text-center">Conferma la tua presenza</h2>
+      <form class="space-y-4" onsubmit="cercaInvitato(event)">
+        <label for="nome" class="block text-sm font-medium text-gray-700">Inserisci il tuo nome e cognome per cercare l'invito</label>
+        <input type="text" id="nome" required placeholder="Es: Mario Rossi" class="w-full p-3 border border-gray-300 rounded">
+        <button type="submit" class="bg-[var(--colore-primario)] text-white px-6 py-3 rounded font-semibold hover:bg-[var(--colore-primario-scuro)] flex items-center gap-2">
+          <span>Verifica famiglia invitata</span>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12h15m-6-6 6 6-6 6" />
+          </svg>
+        </button>
+      </form>
+      <div id="risultato" class="mt-6"></div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="text-center text-sm text-gray-500 py-8">
+      © 2025 Mattia & Giulia — Con amore ♥
+    </footer>
+  </body>
+</html>
