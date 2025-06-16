@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RSVP Test</title>
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+    const supabase = createClient(
+      'https://ehhsyufimkfbvkipjqbt.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoaHN5dWZpbWtmYnZraXBqcWJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5MTgzNTksImV4cCI6MjA2NTQ5NDM1OX0.4mlFhtkzOdXj4Gl5RmMc5BYikUxxUDCpseahQoYZ0-I'
+    );
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('test-form');
+      const output = document.getElementById('output');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const nome = document.getElementById('nome').value.trim();
+        output.innerHTML = `<p>Sto cercando <strong>${nome}</strong>...</p>`;
+
+        const { data: singolo, error } = await supabase
+          .from('ospiti')
+          .select('*')
+          .ilike('nome', `%${nome}%`);
+
+        if (error) {
+          output.innerHTML = `<p style="color:red">Errore: ${error.message}</p>`;
+          return;
+        }
+
+        if (!singolo || singolo.length === 0) {
+          output.innerHTML = `<p style="color:orange">Nessun nome trovato.</p>`;
+          return;
+        }
+
+        const famigliaId = singolo[0].fam_id;
+        const { data: famiglia, error: errFam } = await supabase
+          .from('ospiti')
+          .select('*')
+          .eq('fam_id', famigliaId);
+
+        if (errFam) {
+          output.innerHTML = `<p style="color:red">Errore famiglia: ${errFam.message}</p>`;
+          return;
+        }
+
+        output.innerHTML = '<h3>Famiglia trovata:</h3>' +
+          '<ul>' + famiglia.map(m => `<li>${m.nome} — Presente: ${m.presente}</li>`).join('') + '</ul>';
+      });
+    });
+  </script>
+</head>
+<body style="font-family: sans-serif; max-width: 600px; margin: 2rem auto;">
+  <h1>RSVP Test</h1>
+  <form id="test-form">
+    <label for="nome">Inserisci nome:</label>
+    <input type="text" id="nome" required style="padding: 0.5rem; width: 100%; margin: 0.5rem 0">
+    <button type="submit" style="padding: 0.5rem 1rem">Cerca</button>
+  </form>
+  <div id="output" style="margin-top: 1rem"></div>
+</body>
+</html>
